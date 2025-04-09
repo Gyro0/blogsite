@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { useAuth } from '@/composables/useAuth';
 import { useModerator } from '@/composables/useModerator';
 
@@ -25,11 +25,24 @@ export default {
     const { currentUser, logout } = useAuth();
     const { isModerator, checkModerator } = useModerator();
 
-    // On vérifie si l'utilisateur est modérateur
-    checkModerator();
-
     const user = computed(() => currentUser.value);
     const isMod = computed(() => isModerator.value);
+
+    // Check moderator status whenever currentUser changes
+    watch(currentUser, (newUser) => {
+      if (newUser) {
+        console.log("Current user changed, checking mod status");
+        checkModerator();
+      }
+    });
+
+    // On mount, check if the user is logged in and then check mod status
+    onMounted(() => {
+      if (currentUser.value) {
+        console.log("Component mounted, checking mod status");
+        checkModerator();
+      }
+    });
 
     const handleLogout = () => {
       logout();

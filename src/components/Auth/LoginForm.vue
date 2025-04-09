@@ -30,6 +30,7 @@
   import { ref, watch } from 'vue';
   import { useAuth } from '@/composables/useAuth';
   import { useRouter } from 'vue-router';
+  import { useFirestore } from '@/composables/useFirestore';
   
   export default {
     name: 'LoginForm',
@@ -53,7 +54,28 @@
           const res = await login(email.value, password.value);
           
           if (res && res.user) {
-            console.log("Login successful, navigating to home");
+            console.log("Login successful, user ID:", res.user.uid);
+            
+            // Force token refresh
+            await res.user.getIdToken(true);
+            
+            // Check if user document exists in Firestore
+            const { getItem } = useFirestore('users');
+            const userDoc = await getItem(res.user.uid);
+            console.log("User document from Firestore:", userDoc);
+            
+            // Create user document if it doesn't exist
+            if (!userDoc) {
+              console.log("Creating missing user document");
+              const { setItem } = useFirestore('users');
+              await setItem(res.user.uid, {
+                displayName: res.user.displayName || email.value.split('@')[0],
+                email: email.value.toLowerCase(),
+                role: 'user', // Default role
+                createdAt: new Date()
+              });
+            }
+            
             router.push('/');
           } else {
             console.error("Login failed but no error was thrown");

@@ -63,13 +63,91 @@ export function useFirestore(collectionName) {
     }
   };
 
-  // Other functions in Firebase v8 syntax...
+  // Récupérer un document par ID
+  const getItem = async (id) => {
+    error.value = null;
+    isLoading.value = true;
+    try {
+      const docRef = db.collection(collectionName).doc(id);
+      const docSnap = await docRef.get();
+      
+      if (!docSnap.exists) {
+        console.log("Document not found:", id);
+        return null;
+      }
+      
+      return { id: docSnap.id, ...docSnap.data() };
+    } catch (err) {
+      console.error("Error getting document:", err);
+      error.value = err.message;
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  // Supprimer un document
+  const deleteItem = async (id) => {
+    error.value = null;
+    isLoading.value = true;
+    try {
+      const docRef = db.collection(collectionName).doc(id);
+      await docRef.delete();
+      return true;
+    } catch (err) {
+      console.error("Error deleting document:", err);
+      error.value = err.message;
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  // Mettre à jour un document
+  const updateItem = async (id, data) => {
+    error.value = null;
+    isLoading.value = true;
+    try {
+      const docRef = db.collection(collectionName).doc(id);
+      await docRef.update(data);
+      return true;
+    } catch (err) {
+      console.error("Error updating document:", err);
+      error.value = err.message;
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  // Créer/mettre à jour un document avec un ID spécifique
+  const setItem = async (id, data) => {
+    error.value = null;
+    isLoading.value = true;
+    try {
+      const docRef = db.collection(collectionName).doc(id);
+      await docRef.set({
+        ...data,
+        updatedAt: new Date()
+      });
+      return { id, ...data };
+    } catch (err) {
+      console.error("Error setting document:", err);
+      error.value = err.message;
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  };
 
   return {
     error,
     isLoading,
     addItem,
-    getAllItems
-    // Include other functions
+    getAllItems,
+    getItem,
+    deleteItem,
+    updateItem,
+    setItem  // Add this line
   };
 }

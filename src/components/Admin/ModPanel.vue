@@ -1,32 +1,39 @@
 <template>
-    <b-card title="Panneau de Modération">
-      <p>Ici, le modérateur peut gérer les utilisateurs, discuter, etc.</p>
-      <b-button variant="info" @click="testModeratorAction">Action Modérateur</b-button>
-    </b-card>
-  </template>
-  
-  <script>
-  import { useModerator } from '@/composables/useModerator';
-  
-  export default {
-    name: 'ModPanel',
-    setup() {
-      const { isModerator, checkModerator } = useModerator();
+  <b-card title="Panneau de Modération">
+    <b-tabs content-class="mt-3">
+      <b-tab title="Utilisateurs" active>
+        <UserManagement />
+      </b-tab>
+      <b-tab title="Statistiques">
+        <ModeratorStats />
+      </b-tab>
+    </b-tabs>
+  </b-card>
+</template>
+
+<script>
+import { onMounted } from 'vue';
+import UserManagement from './UserManagement.vue';
+import ModeratorStats from './ModeratorStats.vue';
+import { useModerator } from '@/composables/useModerator';
+import { useAuth } from '@/composables/useAuth';
+
+export default {
+  name: 'ModPanel',
+  components: {
+    UserManagement,
+    ModeratorStats
+  },
+  setup() {
+    const { checkModerator } = useModerator();
+    const { forceTokenRefresh } = useAuth();
+    
+    onMounted(async () => {
+      await forceTokenRefresh();
       checkModerator();
-  
-      const testModeratorAction = () => {
-        if (!isModerator.value) {
-          alert("Vous n'êtes pas modérateur.");
-          return;
-        }
-        alert("Action modérateur exécutée.");
-      };
-  
-      return {
-        isModerator,
-        testModeratorAction
-      };
-    }
-  };
-  </script>
-  
+    });
+    
+    return {};
+  }
+};
+</script>

@@ -10,6 +10,7 @@ import AdminView from '@/views/AdminView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 
 import { useAuth } from '@/composables/useAuth';
+import { useModerator } from '@/composables/useModerator';
 
 const routes = [
   { path: '/', name: 'Home', component: HomeView },
@@ -31,18 +32,20 @@ const router = createRouter({
 // Navigation Guard pour protéger certaines routes
 router.beforeEach(async (to, from) => {
   const { currentUser } = useAuth();
+  const { isModerator, checkModerator } = useModerator();
 
-  // Vérifie si la route requiert d'être authentifié
+  // Check if the route requires authentication
   if (to.meta.requiresAuth && !currentUser.value) {
-    return { name: 'Login' }; // Redirige vers Login
+    return { name: 'Login' };
   }
 
-  // Exemple simple : vérifie si la route requiert d'être modérateur ou admin
-  // Pour plus de robustesse, on pourrait vérifier en base le rôle de l'utilisateur
+  // Check if the route requires moderator privileges
   if (to.meta.requiresMod && currentUser.value) {
-    // Ici on pourrait utiliser useModerator() et checkModerator()
-    // Pour la démo, on part du principe qu'on a un champ custom claims, etc.
-    // Ou alors on redirige si l'utilisateur n'a pas le rôle requis
+    await checkModerator();
+    if (!isModerator.value) {
+      // Redirect to home if not a moderator
+      return { name: 'Home' };
+    }
   }
 
   return true;

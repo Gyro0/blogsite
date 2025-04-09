@@ -37,15 +37,36 @@
       const { currentUser } = useAuth();
       const { addItem, error, isLoading } = useFirestore('discussions');
   
-      const categories = ["Tech", "News", "Sports", "Arts"];
+      // Expanded categories array to match HomeView
+      const categories = [
+        "Tech", 
+        "News", 
+        "Sports", 
+        "Arts", 
+        "Science", 
+        "Health",
+        "Politics", 
+        "Business", 
+        "Education", 
+        "Entertainment", 
+        "Travel", 
+        "Food", 
+        "Fashion",
+        "Gaming",
+        "Music",
+        "Books",
+        "Movies",
+        "DIY",
+        "Photography"
+      ];
   
-      // Champs du formulaire
+      // Form fields
       const title = ref(props.initialData?.title || '');
       const content = ref(props.initialData?.content || '');
       const category = ref(props.initialData?.category || categories[0]);
   
       const handleSubmit = async () => {
-        // Création d'une nouvelle discussion
+        // Create a new discussion
         if (!currentUser.value) return;
         await addItem({
           title: title.value,
@@ -53,10 +74,10 @@
           category: category.value,
           authorId: currentUser.value.uid,
           authorName: currentUser.value.displayName || 'Inconnu',
-          // d'autres champs si besoin
+          // Other fields if needed
         });
         if (!error.value) {
-          // Rediriger ou informer du succès
+          // Redirect or inform success
           window.location.href = '/';
         }
       };
@@ -73,4 +94,3 @@
     }
   };
   </script>
-  

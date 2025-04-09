@@ -45,7 +45,7 @@
       const router = useRouter();
   
       const { register, error: authError, isLoading } = useAuth();
-      const { addItem, getAllItems } = useFirestore('users');
+      const { addItem, getAllItems, setItem } = useFirestore('users');
   
       // Watch for auth errors and update our local error
       watch(authError, (newValue) => {
@@ -97,20 +97,18 @@
             // Create user document in Firestore
             try {
               const userData = {
-                uid: res.user.uid,
                 displayName: displayName.value,
                 email: email.value.toLowerCase(),
                 role: 'user', // Default role
                 createdAt: new Date()
               };
   
-              console.log("Adding user data to Firestore:", userData);  // DEBUGGING
-  
-              await addItem(userData);  // Pass the userData object directly
-  
+              console.log("Adding user data to Firestore with ID:", res.user.uid);
+              
+              // Use setItem with the auth UID as document ID
+              await setItem(res.user.uid, userData);
+              
               console.log("User document created in Firestore");
-  
-              // Redirect to home page or dashboard
               router.push('/');
             } catch (firestoreError) {
               console.error("Error creating user document:", firestoreError);
@@ -147,4 +145,3 @@
     }
   };
   </script>
-  

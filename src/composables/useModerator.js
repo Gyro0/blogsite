@@ -18,27 +18,63 @@ export function useModerator() {
 
   const checkModerator = async () => {
     if (!currentUser.value) {
+      console.log("No current user");
       isModerator.value = false;
       return;
     }
 
+    console.log("Checking mod status for:", currentUser.value.uid);
+    
     // Aller chercher le doc user correspondant
     const { getItem, error } = useFirestore('users');
     const userData = await getItem(currentUser.value.uid);
-    if (error.value) {
+    
+    console.log("User data:", userData);
+    
+    if (!userData || error.value) {
+      console.log("Error or no user data:", error.value);
       isModerator.value = false;
       return;
     }
 
-    // On vérifie le rôle
+    console.log("User role:", userData.role);
+    
+    // This is how the admin check works
     isModerator.value = userData.role === 'moderator' || userData.role === 'admin';
+    console.log("Is moderator:", isModerator.value);
   };
 
   // Méthode pour supprimer un message (ex. discussion, réponse) si on est modérateur
   const removeMessage = async (collectionName, id) => {
-    if (!isModerator.value) return;
-    const { deleteItem } = useFirestore(collectionName);
-    await deleteItem(id);
+    if (!currentUser.value) {
+      console.log("No current user for moderation");
+      return false;
+    }
+    
+    // Re-verify mod status before performing critical operations
+    await checkModerator();
+    
+    if (!isModerator.value) {
+      console.log("User is not a moderator:", currentUser.value.uid);
+      return false;
+    }
+    
+    try {
+      console.log(`Moderator ${currentUser.value.uid} is deleting ${collectionName}/${id}`);
+      const { deleteItem } = useFirestore(collectionName);
+      const result = await deleteItem(id);
+      
+      if (result) {
+        console.log(`Successfully deleted ${collectionName}/${id}`);
+        return true;
+      } else {
+        console.log(`Failed to delete ${collectionName}/${id}`);
+        return false;
+      }
+    } catch (error) {
+      console.error(`Error in removeMessage for ${collectionName}/${id}:`, error);
+      return false;
+    }
   };
 
   return {

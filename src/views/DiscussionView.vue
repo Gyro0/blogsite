@@ -2,15 +2,23 @@
     <div class="container mt-4">
       <DiscussionDetail v-if="discussion" :discussion="discussion" />
       <!-- Liste des réponses -->
-      <ResponseList :responses="responses" />
+      <ResponseList 
+        :responses="responses" 
+        @response-deleted="loadResponses"
+      />
   
       <!-- Formulaire de réponse (uniquement si connecté) -->
-      <ResponseForm v-if="isLoggedIn" :discussionId="discussionId" />
+      <ResponseForm 
+        v-if="isLoggedIn" 
+        :discussionId="discussionId" 
+        @response-added="loadResponses"
+      />
     </div>
   </template>
   
   <script>
   import { ref, onMounted, computed } from 'vue';
+  import { useRoute } from 'vue-router'; // Add this import
   import { useAuth } from '@/composables/useAuth';
   import { useFirestore } from '@/composables/useFirestore';
   
@@ -25,7 +33,8 @@
       ResponseList,
       ResponseForm
     },
-    setup(_, { route }) {
+    setup() { // Remove the route parameter from here
+      const route = useRoute(); // Add this line to get the route
       const { currentUser } = useAuth();
       const { getItem: getDiscussion } = useFirestore('discussions');
       const { getAllItems: getResponses } = useFirestore('responses');
@@ -55,9 +64,9 @@
         discussionId,
         discussion,
         responses,
-        isLoggedIn
+        isLoggedIn,
+        loadResponses
       };
     }
   };
   </script>
-  

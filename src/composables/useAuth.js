@@ -97,6 +97,22 @@ export function useAuth() {
     }
   };
 
+  // Forcer le rafraîchissement du token
+  const forceTokenRefresh = async () => {
+    try {
+      if (currentUser.value) {
+        await currentUser.value.getIdToken(true);
+        console.log("Token refresh successful");
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Token refresh failed:", err);
+      error.value = err.message;
+      return false;
+    }
+  };
+
   return {
     currentUser,
     error,
@@ -104,6 +120,7 @@ export function useAuth() {
     register,
     login,
     logout,
-    resetPassword
+    resetPassword,
+    forceTokenRefresh
   };
 }
