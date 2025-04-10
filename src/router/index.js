@@ -19,6 +19,7 @@ const routes = [
   { path: '/profile', name: 'Profile', component: ProfileView, meta: { requiresAuth: true } },
   { path: '/discussion/:id', name: 'Discussion', component: DiscussionView },
   { path: '/create-discussion', name: 'CreateDiscussion', component: CreateDiscussionView, meta: { requiresAuth: true } },
+  { path: '/edit-discussion/:id', name: 'EditDiscussion', component: () => import('@/views/EditDiscussionView.vue'), meta: { requiresAuth: true } },
   { path: '/category/:cat', name: 'Category', component: CategoryView },
   { path: '/admin', name: 'Admin', component: AdminView, meta: { requiresAuth: true, requiresMod: true } },
   { path: '/:catchAll(.*)', component: NotFoundView },

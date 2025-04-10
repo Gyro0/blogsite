@@ -27,4 +27,4 @@ if (process.env.NODE_ENV !== 'production') {
   window.auth = auth;
 }
 
-export { db, auth };
+export { db, auth, firebase }; // Added firebase to exports

@@ -49,6 +49,11 @@ import { useFirestore } from '@/composables/useFirestore';
 export default {
   name: 'ModeratorStats',
   setup() {
+    // --------------------------------------------------------------
+    // State Management
+    // --------------------------------------------------------------
+    
+    // Statistics counters for different entities
     const stats = ref({
       userCount: 0,
       discussionCount: 0,
@@ -56,8 +61,14 @@ export default {
       pendingReportCount: 0
     });
     
+    // Store recent activity for display
     const recentActivity = ref([]);
     
+    // --------------------------------------------------------------
+    // Data Loading
+    // --------------------------------------------------------------
+    
+    // Load statistics from various collections
     const loadStats = async () => {
       // Load user count
       const { getAllItems: getUsers } = useFirestore('users');
@@ -107,12 +118,18 @@ export default {
         .slice(0, 10);
     };
     
+    // --------------------------------------------------------------
+    // Helper Functions
+    // --------------------------------------------------------------
+    
+    // Format Firebase timestamp to readable date
     const formatDate = (firebaseTimestamp) => {
       if (!firebaseTimestamp) return 'Date inconnue';
       const date = new Date(firebaseTimestamp.seconds * 1000);
       return date.toLocaleString();
     };
     
+    // Format reason code to human-readable text
     const formatReason = (reason) => {
       const reasons = {
         inappropriate: 'Contenu inapproprié',
@@ -124,8 +141,16 @@ export default {
       return reasons[reason] || reason;
     };
     
+    // --------------------------------------------------------------
+    // Lifecycle Hooks
+    // --------------------------------------------------------------
+    
+    // Load all stats when component mounts
     onMounted(loadStats);
     
+    // --------------------------------------------------------------
+    // Expose component API
+    // --------------------------------------------------------------
     return {
       stats,
       recentActivity,

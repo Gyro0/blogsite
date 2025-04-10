@@ -28,15 +28,32 @@
   export default {
     name: 'DiscussionForm',
     props: {
+      // Initial data for edit mode
       initialData: {
         type: Object,
         default: null
+      },
+      // Flag to indicate if we're editing an existing discussion
+      isEditing: {
+        type: Boolean,
+        default: false
       }
     },
     setup(props) {
+      // --------------------------------------------------------------
+      // State Management
+      // --------------------------------------------------------------
+      
+      // Get current user
       const { currentUser } = useAuth();
-      const { addItem, error, isLoading } = useFirestore('discussions');
-  
+      
+      // Get Firestore utilities for discussions collection
+      const { addItem, updateItem, error, isLoading } = useFirestore('discussions');
+      
+      // --------------------------------------------------------------
+      // Categories
+      // --------------------------------------------------------------
+      
       // Expanded categories array to match HomeView
       const categories = [
         "Tech", 
@@ -59,29 +76,57 @@
         "DIY",
         "Photography"
       ];
-  
-      // Form fields
+      
+      // --------------------------------------------------------------
+      // Form data
+      // --------------------------------------------------------------
+    
+      // Form fields initialized from props (for edit mode) or empty (for create mode)
       const title = ref(props.initialData?.title || '');
       const content = ref(props.initialData?.content || '');
       const category = ref(props.initialData?.category || categories[0]);
-  
+      
+      // --------------------------------------------------------------
+      // Form Submission
+      // --------------------------------------------------------------
+    
       const handleSubmit = async () => {
-        // Create a new discussion
+        // Validate required fields
+        if (!title.value.trim() || !content.value.trim() || !category.value) {
+          return;
+        }
+        
         if (!currentUser.value) return;
-        await addItem({
-          title: title.value,
-          content: content.value,
+        
+        // Prepare discussion data
+        const discussionData = {
+          title: title.value.trim(),
+          content: content.value.trim(),
           category: category.value,
           authorId: currentUser.value.uid,
-          authorName: currentUser.value.displayName || 'Inconnu',
-          // Other fields if needed
-        });
+          authorName: currentUser.value.displayName || 'Inconnu'
+        };
+        
+        if (props.isEditing && props.initialData?.id) {
+          // Update existing discussion
+          await updateItem(props.initialData.id, {
+            ...discussionData,
+            updatedAt: new Date()
+          });
+        } else {
+          // Create new discussion
+          await addItem(discussionData);
+        }
+        
         if (!error.value) {
-          // Redirect or inform success
+          // Redirect on success
           window.location.href = '/';
         }
       };
-  
+      
+      // --------------------------------------------------------------
+      // Expose component API
+      // --------------------------------------------------------------
       return {
         title,
         content,

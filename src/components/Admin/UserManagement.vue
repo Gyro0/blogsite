@@ -8,11 +8,19 @@
     
     <b-table :items="filteredUsers" :fields="fields" responsive>
       <template #cell(role)="data">
-        <b-badge :variant="getRoleVariant(data.item.role)">{{ data.item.role }}</b-badge>
+        <b-badge :variant="getRoleVariant(data.item)">
+          {{ getDisplayRole(data.item) }}
+        </b-badge>
       </template>
       
       <template #cell(actions)="data">
-        <b-dropdown text="Actions" size="sm" variant="outline-primary">
+        <!-- Différentes actions basées sur le statut banned -->
+        <div v-if="data.item.banned">
+          <b-button size="sm" variant="success" @click="unbanUser(data.item)">
+            Débannir l'utilisateur
+          </b-button>
+        </div>
+        <b-dropdown v-else text="Actions" size="sm" variant="outline-primary">
           <b-dropdown-item @click="makeAdmin(data.item)" v-if="data.item.role !== 'admin'">
             Faire admin
           </b-dropdown-item>
@@ -35,14 +43,34 @@
 <script>
 import { ref, computed, onMounted } from 'vue';
 import { useFirestore } from '@/composables/useFirestore';
+import { useAuth } from '@/composables/useAuth';
+import { auth, db, firebase } from '@/firebase/firebaseInit';
 
 export default {
   name: 'UserManagement',
   setup() {
-    const users = ref([]);
-    const searchTerm = ref('');
-    const { getAllItems, updateItem } = useFirestore('users');
+    // --------------------------------------------------------------
+    // State Management
+    // --------------------------------------------------------------
     
+    // Store users data fetched from Firestore
+    const users = ref([]);
+    
+    // Track search input for filtering users
+    const searchTerm = ref('');
+    
+    // Prevent concurrent operations to avoid conflicts
+    const isOperationInProgress = ref(false);
+    
+    // Get Firestore and Auth utilities from composables
+    const { getAllItems, updateItem } = useFirestore('users');
+    const { forceTokenRefresh } = useAuth();
+    
+    // --------------------------------------------------------------
+    // Table Configuration
+    // --------------------------------------------------------------
+    
+    // Define table column structure
     const fields = [
       { key: 'displayName', label: 'Nom' },
       { key: 'email', label: 'Email' },
@@ -50,11 +78,29 @@ export default {
       { key: 'actions', label: 'Actions' }
     ];
     
+    // --------------------------------------------------------------
+    // Data Loading
+    // --------------------------------------------------------------
+    
+    // Load users from Firebase and update local state
     const loadUsers = async () => {
-      const usersData = await getAllItems();
-      users.value = usersData;
+      try {
+        // Refresh token to ensure up-to-date permissions
+        await forceTokenRefresh();
+        
+        // Fetch all users from Firestore
+        const usersData = await getAllItems({}, true);
+        users.value = usersData;
+      } catch (error) {
+        alert('Erreur lors du chargement des utilisateurs: ' + error.message);
+      }
     };
     
+    // --------------------------------------------------------------
+    // Computed Properties
+    // --------------------------------------------------------------
+    
+    // Filter users based on search term
     const filteredUsers = computed(() => {
       if (!searchTerm.value) return users.value;
       
@@ -65,48 +111,223 @@ export default {
       );
     });
     
-    const getRoleVariant = (role) => {
+    // Determine badge color based on user role or banned status
+    const getRoleVariant = (user) => {
+      if (user.banned) {
+        return 'dark'; // Banned users get dark badge
+      }
+      
       const variants = {
-        admin: 'danger',
-        moderator: 'warning',
-        user: 'success'
+        admin: 'danger',     // Admins get red badge
+        moderator: 'warning', // Moderators get yellow badge
+        user: 'success'       // Regular users get green badge
       };
-      return variants[role] || 'secondary';
+      return variants[user.role] || 'secondary';
     };
     
+    // Get display text for user role, showing special status for banned users
+    const getDisplayRole = (user) => {
+      if (user.banned) {
+        return 'banned user';
+      }
+      return user.role || 'user';
+    };
+    
+    // --------------------------------------------------------------
+    // User Role Management
+    // --------------------------------------------------------------
+    
+    // Update user role (admin, moderator, user)
     const updateUserRole = async (user, newRole) => {
-      if (confirm(`Êtes-vous sûr de vouloir changer le rôle de ${user.displayName} en ${newRole}?`)) {
-        await updateItem(user.id, { role: newRole });
-        await loadUsers();
+      if (isOperationInProgress.value) {
+        alert("Une opération est déjà en cours, veuillez patienter");
+        return;
+      }
+      
+      const userId = user.id || user.uid;
+      
+      if (!userId) {
+        alert("Une erreur est survenue: ID utilisateur manquant");
+        return;
+      }
+      
+      if (confirm(`Êtes-vous sûr de vouloir changer le rôle de ${user.displayName || user.email} en ${newRole}?`)) {
+        try {
+          isOperationInProgress.value = true;
+          
+          // Refresh user token to ensure current permissions
+          await auth.currentUser.getIdToken(true);
+          
+          // Verify user is authenticated
+          if (!auth.currentUser) {
+            throw new Error("Vous devez être connecté pour effectuer cette action");
+          }
+          
+          // Update user role in Firestore
+          await updateItem(userId, { role: newRole });
+          
+          // Update local state for immediate UI update
+          const userIndex = users.value.findIndex(u => u.id === userId || u.uid === userId);
+          if (userIndex !== -1) {
+            users.value[userIndex].role = newRole;
+          }
+          
+        } catch (error) {
+          // Handle quota exceeded error specifically
+          if (error.message.includes("quota")) {
+            alert("Limite de quota Firebase atteinte. Veuillez réessayer plus tard.");
+          } else {
+            alert(`Erreur lors de la mise à jour: ${error.message}`);
+          }
+        } finally {
+          isOperationInProgress.value = false;
+        }
       }
     };
     
+    // Make user an admin - wrapper for updateUserRole
     const makeAdmin = (user) => updateUserRole(user, 'admin');
+    
+    // Make user a moderator - wrapper for updateUserRole
     const makeModerator = (user) => updateUserRole(user, 'moderator');
+    
+    // Remove elevated privileges - wrapper for updateUserRole
     const makeUser = (user) => updateUserRole(user, 'user');
     
+    // --------------------------------------------------------------
+    // User Ban Management
+    // --------------------------------------------------------------
+    
+    // Ban a user by setting banned flag and recording ban metadata
     const banUser = async (user) => {
-      if (confirm(`Êtes-vous sûr de vouloir bannir ${user.displayName}?`)) {
-        await updateItem(user.id, { 
-          banned: true,
-          bannedAt: new Date()
-        });
-        await loadUsers();
+      if (isOperationInProgress.value) {
+        alert("Une opération est déjà en cours, veuillez patienter");
+        return;
+      }
+      
+      const userId = user.id || user.uid;
+      
+      if (!userId) {
+        alert("Une erreur est survenue: ID utilisateur manquant");
+        return;
+      }
+      
+      if (confirm(`Êtes-vous sûr de vouloir bannir ${user.displayName || user.email}?`)) {
+        try {
+          isOperationInProgress.value = true;
+          
+          // Refresh token to ensure current permissions
+          await auth.currentUser.getIdToken(true);
+          
+          // Update user document with ban information
+          await db.collection('users').doc(userId).update({
+            banned: true,
+            bannedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            bannedBy: auth.currentUser.uid
+          });
+          
+          // Update local state for immediate UI update
+          const userIndex = users.value.findIndex(u => u.id === userId || u.uid === userId);
+          if (userIndex !== -1) {
+            users.value[userIndex].banned = true;
+          }
+          
+          alert(`L'utilisateur ${user.displayName || user.email} a été banni avec succès.`);
+          
+        } catch (error) {
+          // Handle specific error types with appropriate messages
+          if (error.code === 'permission-denied') {
+            alert("Erreur: Vous n'avez pas les permissions nécessaires pour cette action.");
+          } else if (error.message.includes("quota")) {
+            alert("Limite de quota Firebase atteinte. Veuillez réessayer plus tard.");
+          } else {
+            alert(`Erreur: ${error.message}`);
+          }
+        } finally {
+          isOperationInProgress.value = false;
+        }
+      }
+    };
+
+    // Unban a user by removing banned flag and adding unban metadata
+    const unbanUser = async (user) => {
+      if (isOperationInProgress.value) {
+        alert("Une opération est déjà en cours, veuillez patienter");
+        return;
+      }
+      
+      const userId = user.id || user.uid;
+      
+      if (!userId) {
+        alert("Une erreur est survenue: ID utilisateur manquant");
+        return;
+      }
+      
+      if (confirm(`Êtes-vous sûr de vouloir débannir ${user.displayName || user.email}?`)) {
+        try {
+          isOperationInProgress.value = true;
+          
+          // Refresh token to ensure current permissions
+          await auth.currentUser.getIdToken(true);
+          
+          // Update user document to remove ban
+          await db.collection('users').doc(userId).update({
+            banned: false,
+            unbannedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            unbannedBy: auth.currentUser.uid
+          });
+          
+          // Update local state for immediate UI update
+          const userIndex = users.value.findIndex(u => u.id === userId || u.uid === userId);
+          if (userIndex !== -1) {
+            users.value[userIndex].banned = false;
+          }
+          
+          alert(`L'utilisateur ${user.displayName || user.email} a été débanni avec succès.`);
+          
+        } catch (error) {
+          // Handle specific error types with appropriate messages
+          if (error.code === 'permission-denied') {
+            alert("Erreur: Vous n'avez pas les permissions nécessaires pour cette action.");
+          } else if (error.message.includes("quota")) {
+            alert("Limite de quota Firebase atteinte. Veuillez réessayer plus tard.");
+          } else {
+            alert(`Erreur: ${error.message}`);
+          }
+        } finally {
+          isOperationInProgress.value = false;
+        }
       }
     };
     
-    onMounted(loadUsers);
+    // --------------------------------------------------------------
+    // Lifecycle Hooks
+    // --------------------------------------------------------------
     
+    // Load users when component is mounted
+    onMounted(async () => {
+      try {
+        await loadUsers();
+      } catch (error) {
+        console.error("Erreur au chargement initial:", error);
+      }
+    });
+    
+    // --------------------------------------------------------------
+    // Expose component API
+    // --------------------------------------------------------------
     return {
       users,
       searchTerm,
       filteredUsers,
       fields,
       getRoleVariant,
+      getDisplayRole,
       makeAdmin,
       makeModerator,
       makeUser,
-      banUser
+      banUser,
+      unbanUser
     };
   }
 };

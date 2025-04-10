@@ -8,10 +8,10 @@
 import { ref } from 'vue';
 import { auth } from '@/firebase/firebaseInit';
 
-// On stocke l'utilisateur courant dans une référence réactive
+// Store current user in a reactive reference
 const currentUser = ref(null);
 
-// On écoute les changements d'état (authentification)
+// Listen for authentication state changes
 auth.onAuthStateChanged((user) => {
   currentUser.value = user;
 });
@@ -20,97 +20,79 @@ export function useAuth() {
   const error = ref(null);
   const isLoading = ref(false);
 
-  // Inscription avec email et mot de passe
+  // Register with email and password
   const register = async (email, password, displayName) => {
     error.value = null;
     isLoading.value = true;
+    
     try {
-      console.log("Attempting to register:", email);
       const res = await auth.createUserWithEmailAndPassword(email, password);
       if (res) {
-        // Mettre à jour le profil pour stocker le displayName
         await res.user.updateProfile({ displayName });
         currentUser.value = res.user;
       }
       return res;
     } catch (err) {
-      console.error("Registration error:", err.code, err.message);
-      
-      // Provide user-friendly error messages
       if (err.code === 'auth/email-already-in-use') {
-        error.value = "Cette adresse email est déjà utilisée. Veuillez vous connecter ou utiliser une autre adresse email.";
+        error.value = "Cette adresse email est déjà utilisée.";
       } else if (err.code === 'auth/invalid-email') {
         error.value = "Adresse email invalide.";
       } else if (err.code === 'auth/weak-password') {
-        error.value = "Le mot de passe est trop faible. Utilisez au moins 6 caractères.";
+        error.value = "Le mot de passe est trop faible.";
       } else {
         error.value = err.message;
       }
-      
       return null;
     } finally {
       isLoading.value = false;
     }
   };
 
-  // Connexion
+  // Login
   const login = async (email, password) => {
     error.value = null;
     isLoading.value = true;
+    
     try {
-      console.log("Login attempt with:", email);
       const res = await auth.signInWithEmailAndPassword(email, password);
-      console.log("Login successful:", res.user.uid);
       currentUser.value = res.user;
       return res;
     } catch (err) {
-      console.error("Firebase auth error:", err.code, err.message);
-      error.value = err.message;
+      error.value = "Erreur de connexion. Vérifiez vos identifiants.";
       return null;
     } finally {
       isLoading.value = false;
     }
   };
 
-  // Déconnexion
+  // Logout
   const logout = async () => {
-    error.value = null;
-    try {
-      await auth.signOut();
-      currentUser.value = null;
-      window.location.href = '/';
-    } catch (err) {
-      error.value = err.message;
-    }
+    await auth.signOut();
+    currentUser.value = null;
+    window.location.href = '/';
   };
 
-  // Réinitialisation du mot de passe
+  // Reset password
   const resetPassword = async (email) => {
     error.value = null;
     isLoading.value = true;
+    
     try {
       await auth.sendPasswordResetEmail(email);
     } catch (err) {
-      error.value = err.message;
+      error.value = "Erreur lors de la réinitialisation du mot de passe.";
     } finally {
       isLoading.value = false;
     }
   };
 
-  // Forcer le rafraîchissement du token
+  // Force token refresh
   const forceTokenRefresh = async () => {
-    try {
-      if (currentUser.value) {
-        await currentUser.value.getIdToken(true);
-        console.log("Token refresh successful");
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error("Token refresh failed:", err);
-      error.value = err.message;
-      return false;
+    if (currentUser.value) {
+      await currentUser.value.getIdToken(true);
+      return true;
     }
+    return false;
   };
 
   return {
