@@ -16,15 +16,15 @@
     name: 'SearchBar',
     data() {
       return {
+        // Track search input value
         searchTerm: ''
       };
     },
     methods: {
+      // Emit search event to parent with current search term
       emitSearch() {
-        // Émet un événement vers le parent, qui déclenchera la recherche
         this.$emit('search', this.searchTerm);
       }
     }
   };
   </script>
-  

@@ -1,152 +1,103 @@
 <template>
-  <div class="mb-4">
-    <h5 class="filter-title">Filtrer par catégorie</h5>
+  <b-card>
+    <h5 class="mb-3">Catégories</h5>
     
-    <div class="category-buttons-container">
+    <div class="category-grid">
       <!-- "All Categories" button -->
       <b-button
-        :variant="selectedCategory === 'All' ? 'primary' : 'outline-secondary'"
+        :variant="modelValue === 'All' ? 'secondary' : 'outline-secondary'"
         @click="quickSelect('All')"
-        class="category-button mb-2 mr-2"
+        class="category-button"
       >
-        Toutes les catégories
+        Toutes
       </b-button>
       
       <!-- Individual category buttons -->
       <b-button
         v-for="category in categories.filter(c => c !== 'All')"
         :key="category"
-        :variant="selectedCategory === category ? 'primary' : 'info'"
+        :variant="modelValue === category ? 'secondary' : 'outline-secondary'"
         @click="quickSelect(category)"
-        class="category-button mb-2 mr-2"
+        class="category-button"
       >
         {{ category }}
       </b-button>
     </div>
-    
-    <!-- Show currently selected filter -->
-    <div v-if="selectedCategory !== 'All'" class="selected-filter mt-2">
-      <small>
-        Filtre actif: <b-badge>{{ selectedCategory }}</b-badge>
-        <b-button size="sm" variant="link" @click="resetFilter">
-          <i class="bi bi-x-circle"></i> Effacer
-        </b-button>
-      </small>
-    </div>
-  </div>
+  </b-card>
 </template>
 
 <script>
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 
 export default {
   name: 'CategoryFilter',
   props: {
+    // Array of available categories to display
     categories: {
       type: Array,
       required: true
     },
-    value: {
+    // Currently selected category (v-model binding)
+    modelValue: {
       type: String,
       default: 'All'
     }
   },
-  emits: ['filter', 'update:value'],
+  emits: ['filter', 'update:modelValue'],
   setup(props, { emit }) {
-    const selectedCategory = ref(props.value);
+    // --------------------------------------------------------------
+    // State Management
+    // --------------------------------------------------------------
     
-    // Watch for external changes to value
-    watch(() => props.value, (newValue) => {
+    // Local state for selected category
+    const selectedCategory = ref(props.modelValue);
+    
+    // --------------------------------------------------------------
+    // Side Effects
+    // --------------------------------------------------------------
+    
+    // Update local state when prop changes (external v-model updates)
+    watch(() => props.modelValue, (newValue) => {
       selectedCategory.value = newValue;
     });
     
-    const emitFilter = () => {
-      emit('filter', selectedCategory.value);
-      emit('update:value', selectedCategory.value);
-    };
+    // --------------------------------------------------------------
+    // User Interactions
+    // --------------------------------------------------------------
     
-    const resetFilter = () => {
-      selectedCategory.value = 'All';
-      emitFilter();
-    };
-    
+    // Handle category selection
     const quickSelect = (category) => {
+      // Update local state
       selectedCategory.value = category;
-      emitFilter();
-    };
-    
-    const getCategoryVariant = (category) => {
-      const variants = {
-        'Tech': 'info',
-        'News': 'primary',
-        'Sports': 'success',
-        'Arts': 'warning',
-        'Science': 'dark',
-        'Health': 'danger',
-        'Politics': 'secondary',
-        'Business': 'light',
-        'Education': 'info',
-        'Entertainment': 'warning',
-        'Travel': 'success',
-        'Food': 'danger',
-        'Fashion': 'primary',
-        'Gaming': 'info',
-        'Music': 'warning',
-        'Books': 'dark',
-        'Movies': 'danger',
-        'DIY': 'success',
-        'Photography': 'primary'
-      };
       
-      return variants[category] || 'outline-secondary';
+      // Emit filter event for parent component
+      emit('filter', category);
+      
+      // Update v-model value
+      emit('update:modelValue', category);
     };
     
+    // --------------------------------------------------------------
+    // Expose component API
+    // --------------------------------------------------------------
     return {
       selectedCategory,
-      emitFilter,
-      resetFilter,
-      quickSelect,
-      getCategoryVariant
+      quickSelect
     };
   }
 };
 </script>
 
 <style scoped>
-.filter-title {
-  margin-bottom: 1rem;
-  color: #495057;
-}
-
-.category-buttons-container {
+.category-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
 .category-button {
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-
-.category-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.selected-filter {
-  color: #6c757d;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-.mb-2 {
   margin-bottom: 0.5rem;
-}
-
-.mt-2 {
-  margin-top: 0.5rem;
+  flex-grow: 0;
+  font-size: 0.9rem;
 }
 </style>

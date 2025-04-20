@@ -23,9 +23,10 @@ import { useRouter } from 'vue-router';
 export default {
   name: 'ResponseList',
   components: {
-    ResponseItem
+    ResponseItem // Child component for individual responses
   },
   props: {
+    // Array of response data objects
     responses: {
       type: Array,
       default: () => []
@@ -33,20 +34,32 @@ export default {
   },
   emits: ['response-deleted', 'response-updated'],
   setup(props, { emit }) {
+    // --------------------------------------------------------------
+    // State Management
+    // --------------------------------------------------------------
+    
+    // Router for navigation
     const router = useRouter();
     
+    // --------------------------------------------------------------
+    // Event Handlers
+    // --------------------------------------------------------------
+    
+    // Handle response deletion from child component
     const handleResponseDeleted = (responseId) => {
-      console.log("Response deleted in list:", responseId);
       // Refresh the page to update the list
       router.go(0);
     };
     
+    // Handle response updates from child component
     const handleResponseUpdated = (updatedResponse) => {
-      console.log("Response updated in list:", updatedResponse);
       // Refresh the page to show the updated content
       router.go(0);
     };
-
+    
+    // --------------------------------------------------------------
+    // Expose component API
+    // --------------------------------------------------------------
     return {
       handleResponseDeleted,
       handleResponseUpdated

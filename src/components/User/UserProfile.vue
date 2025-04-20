@@ -17,12 +17,23 @@ import { useAuth } from '@/composables/useAuth';
 export default {
   name: 'UserProfile',
   setup() {
+    // --------------------------------------------------------------
+    // State Management
+    // --------------------------------------------------------------
+    
+    // Get current user
     const { currentUser } = useAuth();
 
+    // Profile data
     const displayName = ref(currentUser.value?.displayName || '');
     const email = ref(currentUser.value?.email || '');
     const editDisplayName = ref(displayName.value);
+    
+    // --------------------------------------------------------------
+    // User Actions
+    // --------------------------------------------------------------
 
+    // Update profile with new display name
     const updateProfile = async () => {
       if (!currentUser.value) return;
       
@@ -32,6 +43,7 @@ export default {
           displayName: editDisplayName.value
         });
         
+        // Update local state after successful profile update
         displayName.value = editDisplayName.value;
         alert('Profil mis à jour !');
       } catch (error) {
@@ -39,7 +51,10 @@ export default {
         alert('Erreur lors de la mise à jour du profil.');
       }
     };
-
+    
+    // --------------------------------------------------------------
+    // Expose component API
+    // --------------------------------------------------------------
     return {
       displayName,
       editDisplayName,

@@ -22,18 +22,38 @@
   export default {
     name: 'Notification',
     setup() {
+      // --------------------------------------------------------------
+      // State Management
+      // --------------------------------------------------------------
+      
+      // Get notifications from global store
       const { notifications, removeNotification } = useNotifications();
-  
+      
+      // --------------------------------------------------------------
+      // User Interactions
+      // --------------------------------------------------------------
+      
+      // Remove a notification by ID
       const remove = (id) => {
         removeNotification(id);
       };
-  
-      // Convertit le type (success, error...) en variant bootstrap (success, danger, etc.)
+      
+      // --------------------------------------------------------------
+      // Helper Functions
+      // --------------------------------------------------------------
+      
+      // Convert notification type to Bootstrap variant
       const variant = (type) => {
+        // 'error' maps to 'danger' in Bootstrap
         if (type === 'error') return 'danger';
+        
+        // Use the type as variant or default to 'primary'
         return type || 'primary';
       };
-  
+      
+      // --------------------------------------------------------------
+      // Expose component API
+      // --------------------------------------------------------------
       return {
         notifications,
         remove,
@@ -51,4 +71,3 @@
     opacity: 0;
   }
   </style>
-  

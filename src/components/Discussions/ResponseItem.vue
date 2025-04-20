@@ -72,9 +72,10 @@ import ReportButton from '@/components/Common/ReportButton.vue';
 export default {
   name: 'ResponseItem',
   components: {
-    ReportButton
+    ReportButton // Component for reporting responses
   },
   props: {
+    // Response data object
     response: {
       type: Object,
       required: true
@@ -82,25 +83,40 @@ export default {
   },
   emits: ['response-deleted', 'response-updated'],
   setup(props, { emit }) {
+    // --------------------------------------------------------------
+    // State Management
+    // --------------------------------------------------------------
+    
+    // Get current user and moderator status
     const { currentUser } = useAuth();
+    
+    // Get Firestore utilities
     const { deleteItem, updateItem } = useFirestore('responses');
+    
+    // Get moderator utilities
     const { isModerator } = useModerator();
     
     // Edit state
     const isEditing = ref(false);
     const editContent = ref('');
     
-    // Only authors can edit
-    const canEdit = computed(() => {
-      if (!currentUser.value) return false;
-      return currentUser.value.uid === props.response.authorId;
-    });
+    // --------------------------------------------------------------
+    // Computed Properties
+    // --------------------------------------------------------------
+    
+    // Only authors can edit their own responses
+    const canEdit = computed(() => 
+      currentUser.value && currentUser.value.uid === props.response.authorId
+    );
 
     // Authors and moderators can delete
-    const canDelete = computed(() => {
-      if (!currentUser.value) return false;
-      return currentUser.value.uid === props.response.authorId || isModerator.value;
-    });
+    const canDelete = computed(() => 
+      currentUser.value && (currentUser.value.uid === props.response.authorId || isModerator.value)
+    );
+    
+    // --------------------------------------------------------------
+    // User Interactions
+    // --------------------------------------------------------------
 
     // Start editing
     const startEdit = () => {
@@ -118,36 +134,32 @@ export default {
     const saveEdit = async () => {
       if (!editContent.value.trim()) return;
       
-      try {
-        console.log(`Updating response ${props.response.id} with new content`);
+      // Update response in Firestore
+      const result = await updateItem(props.response.id, {
+        content: editContent.value.trim(),
+        updatedAt: new Date()
+      });
+      
+      if (result) {
+        isEditing.value = false;
         
-        const result = await updateItem(props.response.id, {
-          content: editContent.value.trim(),
-          updatedAt: new Date()
+        // Emit event to refresh the response list
+        emit('response-updated', {
+          id: props.response.id,
+          content: editContent.value.trim()
         });
-        
-        if (result) {
-          console.log("Response updated successfully");
-          isEditing.value = false;
-          
-          // Emit event to refresh the response list
-          emit('response-updated', {
-            id: props.response.id,
-            content: editContent.value.trim()
-          });
-        }
-      } catch (error) {
-        console.error("Error updating response:", error);
       }
     };
 
+    // Delete the response
     const deleteResponse = async () => {
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cette réponse?')) return;
+      
       try {
-        console.log("Deleting response:", props.response.id);
+        // Delete from Firestore
         const result = await deleteItem(props.response.id);
         
         if (result) {
-          console.log("Response deleted successfully");
           // Emit event when deletion is successful
           emit('response-deleted', props.response.id);
         }
@@ -155,7 +167,10 @@ export default {
         console.error("Error deleting response:", error);
       }
     };
-
+    
+    // --------------------------------------------------------------
+    // Expose component API
+    // --------------------------------------------------------------
     return {
       canEdit,
       canDelete,
@@ -165,7 +180,7 @@ export default {
       cancelEdit,
       saveEdit,
       deleteResponse,
-      currentUser // Add this line
+      currentUser
     };
   }
 };
