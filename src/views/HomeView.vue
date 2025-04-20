@@ -126,7 +126,7 @@ export default {
       "Travel", "Food", "Fashion", "Gaming", "Music",
       "Books", "Movies", "DIY", "Photography"
     ];
-      
+
     // --------------------------------------------------------------
     // Data Loading
     // --------------------------------------------------------------
