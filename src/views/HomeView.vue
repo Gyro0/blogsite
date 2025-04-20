@@ -121,28 +121,12 @@ export default {
 
     // Available categories
     const allCategories = [
-      "All", 
-      "Tech", 
-      "News", 
-      "Sports", 
-      "Arts", 
-      "Science", 
-      "Health",
-      "Politics", 
-      "Business", 
-      "Education", 
-      "Entertainment", 
-      "Travel", 
-      "Food", 
-      "Fashion",
-      "Gaming",
-      "Music",
-      "Books",
-      "Movies",
-      "DIY",
-      "Photography"
+      "All", "Tech", "News", "Sports", "Arts", "Science", "Health",
+      "Politics", "Business", "Education", "Entertainment", 
+      "Travel", "Food", "Fashion", "Gaming", "Music",
+      "Books", "Movies", "DIY", "Photography"
     ];
-    
+
     // --------------------------------------------------------------
     // Data Loading
     // --------------------------------------------------------------
@@ -197,7 +181,7 @@ export default {
         result = result.filter(discussion => {
           if (!discussion.category) return false;
           return discussion.category.toLowerCase() === selectedCategory.value.toLowerCase();
-        });
+                                             });
       }
       
       // Filter by search term if provided
