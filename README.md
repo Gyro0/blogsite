@@ -1,5 +1,5 @@
 # blogsite
-### Project COllaborators
+### Project Collaborators
 ```
 Abderrahim Oussayh
 Oussama Ghiati
