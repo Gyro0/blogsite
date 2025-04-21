@@ -1,10 +1,10 @@
 <template>
-  <div>
-    <h3>Réponses</h3>
-    <div v-if="responses.length === 0" class="alert alert-info">
+  <div class="response-list">
+    <h3 class="response-list-title">Réponses</h3>
+    <div v-if="responses.length === 0" class="no-responses">
       Aucune réponse pour le moment.
     </div>
-    <b-list-group>
+    <div v-else class="response-items">
       <ResponseItem
         v-for="resp in responses"
         :key="resp.id"
@@ -12,7 +12,7 @@
         @response-deleted="handleResponseDeleted"
         @response-updated="handleResponseUpdated"
       />
-    </b-list-group>
+    </div>
   </div>
 </template>
 
@@ -67,3 +67,37 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.response-list {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.response-list-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #23405a;
+  margin-bottom: 1rem;
+}
+
+.no-responses {
+  text-align: center;
+  color: #23405a;
+  font-size: 1.2rem;
+  font-weight: 600;
+  background: #e4edf2;
+  padding: 1.5rem;
+  border-radius: 1.5rem;
+  border: 1.5px solid #bbdcf0;
+  box-shadow: 0 2px 24px #a8daf955;
+}
+
+.response-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+</style>

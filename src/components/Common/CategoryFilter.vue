@@ -1,29 +1,23 @@
 <template>
-  <b-card>
+  <div class="category-card">
     <h5 class="mb-3">Catégories</h5>
-    
     <div class="category-grid">
-      <!-- "All Categories" button -->
-      <b-button
-        :variant="modelValue === 'All' ? 'secondary' : 'outline-secondary'"
+      <button
+        :class="['category-button', { active: modelValue === 'All' }]"
         @click="quickSelect('All')"
-        class="category-button"
       >
         Toutes
-      </b-button>
-      
-      <!-- Individual category buttons -->
-      <b-button
+      </button>
+      <button
         v-for="category in categories.filter(c => c !== 'All')"
         :key="category"
-        :variant="modelValue === category ? 'secondary' : 'outline-secondary'"
+        :class="['category-button', { active: modelValue === category }]"
         @click="quickSelect(category)"
-        class="category-button"
       >
         {{ category }}
-      </b-button>
+      </button>
     </div>
-  </b-card>
+  </div>
 </template>
 
 <script>
@@ -32,12 +26,10 @@ import { ref, watch } from 'vue';
 export default {
   name: 'CategoryFilter',
   props: {
-    // Array of available categories to display
     categories: {
       type: Array,
       required: true
     },
-    // Currently selected category (v-model binding)
     modelValue: {
       type: String,
       default: 'All'
@@ -45,41 +37,18 @@ export default {
   },
   emits: ['filter', 'update:modelValue'],
   setup(props, { emit }) {
-    // --------------------------------------------------------------
-    // State Management
-    // --------------------------------------------------------------
-    
-    // Local state for selected category
     const selectedCategory = ref(props.modelValue);
-    
-    // --------------------------------------------------------------
-    // Side Effects
-    // --------------------------------------------------------------
-    
-    // Update local state when prop changes (external v-model updates)
+
     watch(() => props.modelValue, (newValue) => {
       selectedCategory.value = newValue;
     });
-    
-    // --------------------------------------------------------------
-    // User Interactions
-    // --------------------------------------------------------------
-    
-    // Handle category selection
+
     const quickSelect = (category) => {
-      // Update local state
       selectedCategory.value = category;
-      
-      // Emit filter event for parent component
       emit('filter', category);
-      
-      // Update v-model value
       emit('update:modelValue', category);
     };
-    
-    // --------------------------------------------------------------
-    // Expose component API
-    // --------------------------------------------------------------
+
     return {
       selectedCategory,
       quickSelect
@@ -89,15 +58,60 @@ export default {
 </script>
 
 <style scoped>
+.category-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 24px #a8daf955;
+  padding: 2rem 1.5rem;
+  color: #23405a;
+  border: 1.5px solid #bbdcf0;
+}
+
+h5 {
+  color: #23405a;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+  letter-spacing: -0.5px;
+}
+
 .category-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.7rem;
 }
 
 .category-button {
-  margin-bottom: 0.5rem;
-  flex-grow: 0;
-  font-size: 0.9rem;
+  background: #e4edf2;
+  color: #23405a;
+  border: 1.5px solid #bbdcf0;
+  border-radius: 1.2rem;
+  padding: 0.45rem 1.2rem;
+  font-size: 0.97rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border 0.18s, box-shadow 0.18s;
+  box-shadow: 0 1px 4px #a8daf922;
+  outline: none;
+}
+.category-button.active,
+.category-button:hover {
+  background: linear-gradient(90deg, #a8daf9 0%, #92d2f9 100%);
+  color: #23405a;
+  border-color: #92d2f9;
+  box-shadow: 0 4px 16px #92d2f988;
+}
+
+@media (max-width: 600px) {
+  .category-card {
+    padding: 1.2rem 0.5rem;
+    border-radius: 1rem;
+  }
+  .category-grid {
+    gap: 0.4rem;
+  }
+  .category-button {
+    font-size: 0.93rem;
+    padding: 0.35rem 0.8rem;
+  }
 }
 </style>

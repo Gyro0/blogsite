@@ -1,65 +1,39 @@
 <template>
-  <b-list-group-item>
-    <div class="d-flex justify-content-between align-items-start">
-      <div class="w-100">
-        <h5>{{ response.authorName }}</h5>
-        
-        <!-- Show this when not editing -->
-        <div v-if="!isEditing">
-          <p>{{ response.content }}</p>
-        </div>
-        
-        <!-- Show this when editing -->
-        <div v-else>
-          <b-form @submit.prevent="saveEdit">
-            <b-form-textarea 
-              v-model="editContent" 
-              rows="3"
-              class="mb-2"
-              required
-            ></b-form-textarea>
-            <div>
-              <b-button type="submit" variant="success" size="sm" class="mr-2">Enregistrer</b-button>
-              <b-button variant="outline-secondary" size="sm" @click="cancelEdit">Annuler</b-button>
-            </div>
-          </b-form>
+  <div class="response-item">
+    <div class="response-header">
+      <div class="author-info">
+        <div class="author-avatar">{{ getInitials(response.authorName) }}</div>
+        <div class="author-details">
+          <h5 class="author-name">{{ response.authorName }}</h5>
+          <small class="response-date">{{ formatDate(response.createdAt) }}</small>
         </div>
       </div>
-      
-      <div v-if="!isEditing">
-        <!-- Only show edit button if user is author -->
-        <b-button 
-          v-if="canEdit" 
-          variant="primary" 
-          size="sm" 
-          class="mr-2"
-          @click="startEdit"
-        >
-          Modifier
-        </b-button>
-        
-        <!-- Only show delete button if user is author or moderator -->
-        <b-button 
-          v-if="canDelete" 
-          variant="danger" 
-          size="sm" 
-          @click="deleteResponse"
-        >
-          Supprimer
-        </b-button>
-
-        <!-- Show report button if user is not the author -->
-        <ReportButton 
+      <div class="response-actions" v-if="!isEditing">
+        <button v-if="canEdit" class="action-btn edit-btn" @click="startEdit">Modifier</button>
+        <button v-if="canDelete" class="action-btn delete-btn" @click="deleteResponse">Supprimer</button>
+        <ReportButton
           v-if="currentUser && currentUser.uid !== response.authorId"
           :contentId="response.id"
           contentType="response"
           :authorId="response.authorId"
           :discussionId="response.discussionId"
-          class="ml-2"
         />
       </div>
     </div>
-  </b-list-group-item>
+
+    <div class="response-content">
+      <p v-if="!isEditing">{{ response.content }}</p>
+      <div v-else>
+        <form @submit.prevent="saveEdit">
+          <textarea v-model="editContent" rows="3" class="edit-textarea" required></textarea>
+          <div class="edit-actions">
+            <button type="submit" class="action-btn save-btn">Enregistrer</button>
+            <button type="button" class="action-btn cancel-btn" @click="cancelEdit">Annuler</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -71,11 +45,8 @@ import ReportButton from '@/components/Common/ReportButton.vue';
 
 export default {
   name: 'ResponseItem',
-  components: {
-    ReportButton // Component for reporting responses
-  },
+  components: { ReportButton },
   props: {
-    // Response data object
     response: {
       type: Object,
       required: true
@@ -83,103 +54,73 @@ export default {
   },
   emits: ['response-deleted', 'response-updated'],
   setup(props, { emit }) {
-    // --------------------------------------------------------------
-    // State Management
-    // --------------------------------------------------------------
-    
-    // Get current user and moderator status
     const { currentUser } = useAuth();
-    
-    // Get Firestore utilities
     const { deleteItem, updateItem } = useFirestore('responses');
-    
-    // Get moderator utilities
     const { isModerator } = useModerator();
-    
-    // Edit state
+
     const isEditing = ref(false);
     const editContent = ref('');
-    
-    // --------------------------------------------------------------
-    // Computed Properties
-    // --------------------------------------------------------------
-    
-    // Only authors can edit their own responses
-    const canEdit = computed(() => 
-      currentUser.value && currentUser.value.uid === props.response.authorId
-    );
 
-    // Authors and moderators can delete
-    const canDelete = computed(() => 
-      currentUser.value && (currentUser.value.uid === props.response.authorId || isModerator.value)
-    );
-    
-    // --------------------------------------------------------------
-    // User Interactions
-    // --------------------------------------------------------------
+    const canEdit = computed(() => currentUser.value?.uid === props.response.authorId);
+    const canDelete = computed(() => currentUser.value?.uid === props.response.authorId || isModerator.value);
 
-    // Start editing
     const startEdit = () => {
       editContent.value = props.response.content;
       isEditing.value = true;
     };
-    
-    // Cancel editing
+
     const cancelEdit = () => {
       isEditing.value = false;
       editContent.value = '';
     };
-    
-    // Save the edited response
+
     const saveEdit = async () => {
       if (!editContent.value.trim()) return;
-      
-      // Update response in Firestore
+
       const result = await updateItem(props.response.id, {
         content: editContent.value.trim(),
         updatedAt: new Date()
       });
-      
+
       if (result) {
         isEditing.value = false;
-        
-        // Emit event to refresh the response list
-        emit('response-updated', {
-          id: props.response.id,
-          content: editContent.value.trim()
-        });
+        emit('response-updated', { id: props.response.id, content: editContent.value.trim() });
       }
     };
 
-    // Delete the response
     const deleteResponse = async () => {
-      if (!confirm('Êtes-vous sûr de vouloir supprimer cette réponse?')) return;
-      
-      try {
-        // Delete from Firestore
-        const result = await deleteItem(props.response.id);
-        
-        if (result) {
-          // Emit event when deletion is successful
-          emit('response-deleted', props.response.id);
-        }
-      } catch (error) {
-        console.error("Error deleting response:", error);
-      }
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cette réponse ?')) return;
+
+      const result = await deleteItem(props.response.id);
+      if (result) emit('response-deleted', props.response.id);
     };
-    
-    // --------------------------------------------------------------
-    // Expose component API
-    // --------------------------------------------------------------
+
+    const formatDate = (timestamp) => {
+      if (!timestamp) return 'Date inconnue';
+      const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
+      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
+    const getInitials = (name) => {
+      if (!name) return '?';
+      return name
+        .split(' ')
+        .map((part) => part.charAt(0).toUpperCase())
+        .join('')
+        .substring(0, 2);
+    };
+
     return {
-      canEdit,
-      canDelete,
       isEditing,
       editContent,
+      canEdit,
+      canDelete,
       startEdit,
       cancelEdit,
       saveEdit,
       deleteResponse,
+      formatDate,
+      getInitials,
       currentUser
     };
   }
@@ -187,7 +128,116 @@ export default {
 </script>
 
 <style scoped>
-.mr-2 {
-  margin-right: 0.5rem;
+.response-item {
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 24px #a8daf955;
+  padding: 1.5rem;
+  border: 1.5px solid #bbdcf0;
+  margin-bottom: 1.5rem;
+}
+
+.response-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.author-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.author-avatar {
+  background: #92d2f9;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.2rem;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.author-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.author-name {
+  font-weight: 600;
+  color: #23405a;
+}
+
+.response-date {
+  font-size: 0.9rem;
+  color: #92d2f9;
+}
+
+.response-content {
+  font-size: 1rem;
+  color: #23405a;
+  line-height: 1.5;
+}
+
+.edit-textarea {
+  width: 100%;
+  border-radius: 1.2rem;
+  border: 1.5px solid #bbdcf0;
+  background: #fff;
+  color: #23405a;
+  padding: 0.7rem 1.2rem;
+  font-size: 1rem;
+  outline: none;
+  resize: none;
+  transition: border 0.18s;
+}
+
+.edit-textarea:focus {
+  border-color: #a8daf9;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.action-btn {
+  background: linear-gradient(90deg, #a8daf9 0%, #92d2f9 100%);
+  color: #23405a;
+  font-weight: 700;
+  border: none;
+  border-radius: 2rem;
+  padding: 0.5rem 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.action-btn:hover {
+  background: linear-gradient(90deg, #92d2f9 0%, #a8daf9 100%);
+  transform: translateY(-2px);
+}
+
+.delete-btn {
+  background: linear-gradient(90deg, #ffb3b3 0%, #ffe4e4 100%);
+  color: #a94442;
+}
+
+.delete-btn:hover {
+  background: linear-gradient(90deg, #ffe4e4 0%, #ffb3b3 100%);
+}
+
+.cancel-btn {
+  background: #e4edf2;
+  color: #23405a;
+}
+
+.cancel-btn:hover {
+  background: #cde2ee;
 }
 </style>

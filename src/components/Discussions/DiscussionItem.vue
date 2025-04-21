@@ -1,74 +1,56 @@
 <template>
-  <b-card class="discussion-card h-100">
-    <template #header>
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <b-badge variant="secondary">
-            {{ discussion.category }}
-          </b-badge>
-          <b-badge v-if="discussion.subcategory" variant="light" class="ml-1">
-            {{ discussion.subcategory }}
-          </b-badge>
-        </div>
-        <small class="text-muted">
-          {{ formatDate(discussion.createdAt) }}
-        </small>
+  <div class="discussion-card">
+    <!-- Header Section -->
+    <div class="discussion-header">
+      <div class="discussion-badges">
+        <span class="badge category">{{ discussion.category }}</span>
+        <span v-if="discussion.subcategory" class="badge subcategory">{{ discussion.subcategory }}</span>
       </div>
-    </template>
+      <small class="discussion-date">{{ formatDate(discussion.createdAt) }}</small>
+    </div>
 
-    <h5 class="card-title">
-      <router-link :to="`/discussion/${discussion.id}`" class="text-decoration-none">
+    <!-- Title -->
+    <h3 class="discussion-title">
+      <router-link :to="`/discussion/${discussion.id}`" class="title-link">
         {{ discussion.title }}
       </router-link>
-    </h5>
-    
-    <h6 class="card-subtitle mb-2 text-muted">
-      Par {{ discussion.authorName }}
-    </h6>
-    
-    <p class="card-text text-truncate">{{ discussion.content }}</p>
-    
-    <template #footer>
-      <div class="d-flex justify-content-between align-items-center">
-        <b-button variant="link" class="p-0" :to="`/discussion/${discussion.id}`">
-          Voir la discussion
-        </b-button>
-        <small class="text-muted">
-          {{ responseCount }} réponse(s)
-        </small>
-      </div>
-    </template>
-  </b-card>
+    </h3>
+
+    <!-- Author Info -->
+    <h6 class="discussion-author">Par {{ discussion.authorName }}</h6>
+
+    <!-- Content Preview -->
+    <p class="discussion-content">{{ discussion.content }}</p>
+
+    <!-- Footer Section -->
+    <div class="discussion-footer">
+      <router-link :to="`/discussion/${discussion.id}`" class="blue-btn view-btn">
+        Voir la discussion
+      </router-link>
+      <small class="response-count">{{ responseCount }} réponse(s)</small>
+    </div>
+  </div>
 </template>
-  
+
 <script>
 export default {
   name: 'DiscussionItem',
   props: {
-    // Discussion data object
     discussion: {
       type: Object,
       required: true
     },
-    // Number of responses to this discussion
     responseCount: {
       type: Number,
       default: 0
     }
   },
   methods: {
-    // --------------------------------------------------------------
-    // Helper Methods
-    // --------------------------------------------------------------
-    
-    // Format timestamp to readable date
     formatDate(timestamp) {
       if (!timestamp) return 'Date inconnue';
-      
-      const date = timestamp.seconds 
-        ? new Date(timestamp.seconds * 1000) 
+      const date = timestamp.seconds
+        ? new Date(timestamp.seconds * 1000)
         : new Date(timestamp);
-        
       return date.toLocaleDateString('fr-FR', {
         day: 'numeric',
         month: 'short',
@@ -81,36 +63,93 @@ export default {
 
 <style scoped>
 .discussion-card {
-  transition: all 0.2s ease;
-  border-radius: 0.5rem;
+  background: linear-gradient(120deg, #e4edf2 60%, #cde2ee 100%);
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 24px #a8daf955;
+  padding: 1.5rem;
+  color: #23405a;
+  border: 1.5px solid #bbdcf0;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .discussion-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-.text-decoration-none {
-  text-decoration: none !important;
-  color: #212529;
+.discussion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
-.text-decoration-none:hover {
-  color: #007bff;
+.discussion-badges .badge {
+  background: #e4edf2;
+  color: #23405a;
+  border-radius: 1rem;
+  padding: 0.3rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-right: 0.5rem;
 }
 
-.text-truncate {
+.discussion-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.title-link {
+  text-decoration: none;
+  color: #23405a;
+  transition: color 0.2s;
+}
+
+.title-link:hover {
+  color: #92d2f9;
+}
+
+.discussion-author {
+  font-size: 0.9rem;
+  color: #92d2f9;
+  margin-bottom: 1rem;
+}
+
+.discussion-content {
+  font-size: 1rem;
+  color: #23405a;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 100%;
 }
 
-.ml-1 {
-  margin-left: 0.25rem;
+.discussion-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.mb-2 {
-  margin-bottom: 0.5rem;
+.blue-btn.view-btn {
+  background: linear-gradient(90deg, #a8daf9 0%, #92d2f9 100%);
+  color: #23405a;
+  font-weight: 700;
+  border: none;
+  border-radius: 2rem;
+  padding: 0.5rem 1.5rem;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.blue-btn.view-btn:hover {
+  background: linear-gradient(90deg, #92d2f9 0%, #a8daf9 100%);
+  transform: translateY(-2px);
+}
+
+.response-count {
+  font-size: 0.9rem;
+  color: #92d2f9;
 }
 </style>

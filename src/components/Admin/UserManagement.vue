@@ -332,3 +332,100 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.b-form-input {
+  border-radius: 1.2rem;
+  border: 1.5px solid #bbdcf0;
+  background: #fff;
+  color: #23405a;
+  box-shadow: 0 1px 4px #a8daf922;
+  padding: 0.6rem 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+.b-table {
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid #bbdcf0;
+  box-shadow: 0 1px 8px #a8daf922;
+  color: #23405a;
+}
+
+.b-badge {
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 0.97rem;
+  padding: 0.35em 1em;
+}
+.b-badge-danger {
+  background: #ffb3b3;
+  color: #a94442;
+}
+.b-badge-warning {
+  background: #fff3cd;
+  color: #856404;
+}
+.b-badge-success {
+  background: #cde2ee;
+  color: #23405a;
+}
+.b-badge-dark {
+  background: #bbdcf0;
+  color: #23405a;
+}
+.b-badge-secondary {
+  background: #e4edf2;
+  color: #23405a;
+}
+
+.b-button,
+.b-dropdown .dropdown-toggle {
+  background: linear-gradient(90deg, #a8daf9 0%, #92d2f9 100%);
+  color: #23405a !important;
+  border: none;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 2px 8px #a8daf955;
+  border-radius: 2rem;
+  padding: 0.5rem 1.2rem;
+  margin-right: 0.5rem;
+}
+.b-button:last-child {
+  margin-right: 0;
+}
+.b-button:hover,
+.b-dropdown .dropdown-toggle:hover {
+  background: linear-gradient(90deg, #92d2f9 0%, #a8daf9 100%);
+  color: #23405a !important;
+  box-shadow: 0 6px 24px #92d2f988;
+}
+
+.b-dropdown-menu {
+  border-radius: 1rem;
+  border: 1px solid #bbdcf0;
+  box-shadow: 0 2px 8px #a8daf955;
+  background: #fff;
+}
+
+.b-dropdown-item {
+  color: #23405a;
+  font-weight: 500;
+  border-radius: 0.7rem;
+  transition: background 0.15s, color 0.15s;
+}
+.b-dropdown-item:hover {
+  background: #e4edf2;
+  color: #23405a;
+}
+
+.b-dropdown-divider {
+  border-top: 1px solid #bbdcf0;
+}
+
+@media (max-width: 700px) {
+  .b-table {
+    font-size: 0.95rem;
+  }
+}
+</style>

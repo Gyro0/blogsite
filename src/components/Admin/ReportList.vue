@@ -277,3 +277,105 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.b-card {
+  background: linear-gradient(120deg, #e4edf2 60%, #cde2ee 100%);
+  border-radius: 18px;
+  box-shadow: 0 2px 16px #a8daf955;
+  color: #23405a;
+  border: 1.5px solid #bbdcf0;
+  margin-bottom: 2.5rem;
+}
+
+.b-tabs {
+  background: transparent;
+  border: none;
+}
+
+.b-tab {
+  background: transparent;
+  border: none;
+}
+
+.b-form-input {
+  border-radius: 1.2rem;
+  border: 1.5px solid #bbdcf0;
+  background: #fff;
+  color: #23405a;
+  box-shadow: 0 1px 4px #a8daf922;
+  padding: 0.6rem 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+.b-table {
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid #bbdcf0;
+  box-shadow: 0 1px 8px #a8daf922;
+  color: #23405a;
+}
+
+.b-badge {
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 0.97rem;
+  padding: 0.35em 1em;
+}
+
+.b-badge-danger {
+  background: #ffb3b3;
+  color: #a94442;
+}
+.b-badge-warning {
+  background: #fff3cd;
+  color: #856404;
+}
+.b-badge-info {
+  background: #a8daf9;
+  color: #23405a;
+}
+.b-badge-success {
+  background: #cde2ee;
+  color: #23405a;
+}
+.b-badge-secondary {
+  background: #e4edf2;
+  color: #23405a;
+}
+
+.b-button-group .b-button,
+.b-button {
+  background: linear-gradient(90deg, #a8daf9 0%, #92d2f9 100%);
+  color: #23405a !important;
+  border: none;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 2px 8px #a8daf955;
+  border-radius: 2rem;
+  padding: 0.5rem 1.2rem;
+  margin-right: 0.5rem;
+}
+.b-button:last-child {
+  margin-right: 0;
+}
+.b-button:hover {
+  background: linear-gradient(90deg, #92d2f9 0%, #a8daf9 100%);
+  color: #23405a !important;
+  box-shadow: 0 6px 24px #92d2f988;
+}
+
+.b-spinner {
+  color: #92d2f9 !important;
+}
+
+@media (max-width: 700px) {
+  .b-card {
+    padding: 1.2rem 0.5rem;
+    border-radius: 1rem;
+  }
+  .b-table {
+    font-size: 0.95rem;
+  }
+}
+</style>

@@ -1,95 +1,61 @@
 <template>
-  <b-card class="discussion-detail-card mb-4">
-    <!-- Header with title and badges -->
-    <template #header>
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <b-badge variant="secondary" class="mr-2">
-            {{ discussion.category }}
-          </b-badge>
-          <b-badge v-if="discussion.subcategory" variant="light">
-            {{ discussion.subcategory }}
-          </b-badge>
-        </div>
-        <div>
-          <b-badge v-if="isModeratorUser" variant="info">
-            Modérateur
-          </b-badge>
-        </div>
+  <div class="discussion-detail">
+    <!-- Header Section -->
+    <div class="discussion-header">
+      <div class="discussion-badges">
+        <span class="badge category">{{ discussion.category }}</span>
+        <span v-if="discussion.subcategory" class="badge subcategory">{{ discussion.subcategory }}</span>
       </div>
-    </template>
-    
-    <!-- Discussion title -->
-    <h2 class="mb-3">{{ discussion.title }}</h2>
-    
-    <!-- Author info and publication date -->
-    <div class="author-info mb-4">
-      <div class="d-flex align-items-center">
-        <b-avatar variant="secondary" class="mr-2" text-variant="white">
-          {{ getInitials(discussion.authorName) }}
-        </b-avatar>
-        <div>
-          <div class="font-weight-bold">{{ discussion.authorName }}</div>
-          <small class="text-muted">Publié le {{ discussionDate }}</small>
-        </div>
+      <div v-if="isModeratorUser" class="moderator-badge">
+        <i class="bi bi-shield"></i> Modérateur
       </div>
     </div>
-    
-    <!-- Discussion content -->
-    <div class="discussion-content mb-4">
+
+    <!-- Title -->
+    <h1 class="discussion-title">{{ discussion.title }}</h1>
+
+    <!-- Author Info -->
+    <div class="author-info">
+      <div class="author-avatar">{{ getInitials(discussion.authorName) }}</div>
+      <div class="author-details">
+        <span class="author-name">{{ discussion.authorName }}</span>
+        <span class="discussion-date">Publié le {{ discussionDate }}</span>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="discussion-content">
       <p>{{ discussion.content }}</p>
     </div>
-    
-    <!-- Action buttons -->
-    <div class="d-flex align-items-center mt-4">
-      <!-- Edit button for author and moderators -->
-      <b-button 
-        v-if="canEdit" 
-        variant="outline-warning" 
-        size="sm"
-        class="mr-2" 
-        @click="editDiscussion"
-      >
+
+    <!-- Action Buttons -->
+    <div class="discussion-actions">
+      <button v-if="canEdit" class="action-btn edit-btn" @click="editDiscussion">
         <i class="bi bi-pencil-square"></i> Modifier
-      </b-button>
-      
-      <!-- Delete button for author and moderators -->
-      <b-button 
-        v-if="canDelete" 
-        variant="outline-danger" 
-        size="sm" 
-        class="mr-2" 
-        @click="confirmDelete"
-      >
+      </button>
+      <button v-if="canDelete" class="action-btn delete-btn" @click="confirmDelete">
         <i class="bi bi-trash"></i> Supprimer
-      </b-button>
-      
-      <!-- Report button for regular users -->
-      <ReportButton 
+      </button>
+      <ReportButton
         v-if="currentUser && currentUser.uid !== discussion.authorId && !isModeratorUser"
         :contentId="discussion.id"
         contentType="discussion"
         :authorId="discussion.authorId"
       />
-      
-      <!-- Moderation indicator -->
-      <small v-if="canModerate && !isAuthor" class="text-muted ml-auto">
-        <i class="bi bi-shield"></i> Action modérateur
-      </small>
     </div>
-    
-    <!-- Confirmation modal for deletion -->
-    <b-modal 
-      v-model="showDeleteModal" 
-      title="Confirmer la suppression" 
-      @ok="deleteDiscussion" 
-      ok-variant="danger"
-      ok-title="Supprimer"
-      cancel-title="Annuler"
-    >
-      <p>Êtes-vous sûr de vouloir supprimer cette discussion? Cette action est irréversible.</p>
-    </b-modal>
-  </b-card>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="delete-modal">
+      <div class="modal-content">
+        <h3>Confirmer la suppression</h3>
+        <p>Êtes-vous sûr de vouloir supprimer cette discussion ? Cette action est irréversible.</p>
+        <div class="modal-actions">
+          <button class="action-btn cancel-btn" @click="showDeleteModal = false">Annuler</button>
+          <button class="action-btn danger-btn" @click="deleteDiscussion">Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -102,48 +68,26 @@ import ReportButton from '@/components/Common/ReportButton.vue';
 
 export default {
   name: 'DiscussionDetail',
-  components: {
-    ReportButton // Component for reporting content
-  },
+  components: { ReportButton },
   props: {
-    // Discussion data object
     discussion: {
       type: Object,
       required: true
     }
   },
   setup(props) {
-    // --------------------------------------------------------------
-    // State Management
-    // --------------------------------------------------------------
-    
-    // Get current user and moderator status
     const { currentUser } = useAuth();
-    
-    // Get Firestore utilities
     const { deleteItem, updateItem } = useFirestore('discussions');
-    
-    // Get moderator utilities
     const { isModerator } = useModerator();
-    
-    // For navigation
     const router = useRouter();
-    
-    // Control deletion confirmation modal
+
     const showDeleteModal = ref(false);
-    
-    // --------------------------------------------------------------
-    // Computed Properties
-    // --------------------------------------------------------------
-    
-    // Format the discussion creation date
+
     const discussionDate = computed(() => {
       if (!props.discussion.createdAt) return 'Date inconnue';
-      
-      const date = props.discussion.createdAt.seconds 
-        ? new Date(props.discussion.createdAt.seconds * 1000) 
+      const date = props.discussion.createdAt.seconds
+        ? new Date(props.discussion.createdAt.seconds * 1000)
         : new Date(props.discussion.createdAt);
-      
       return date.toLocaleDateString('fr-FR', {
         day: 'numeric',
         month: 'short',
@@ -153,49 +97,21 @@ export default {
       });
     });
 
-    // Check if current user is the author
-    const isAuthor = computed(() => {
-      return currentUser.value && currentUser.value.uid === props.discussion.authorId;
-    });
-    
-    // Check if current user can moderate content
-    const canModerate = computed(() => {
-      return currentUser.value && isModerator.value;
-    });
+    const isAuthor = computed(() => currentUser.value?.uid === props.discussion.authorId);
+    const canModerate = computed(() => currentUser.value && isModerator.value);
+    const canEdit = computed(() => isAuthor.value || canModerate.value);
+    const canDelete = computed(() => isAuthor.value || canModerate.value);
+    const isModeratorUser = computed(() => isModerator.value);
 
-    // Access rights for edit: either owner or moderator
-    const canEdit = computed(() => {
-      return isAuthor.value || canModerate.value;
-    });
-    
-    // Access rights for delete: either owner or moderator
-    const canDelete = computed(() => {
-      return isAuthor.value || canModerate.value;
-    });
-
-    // Flag to show moderator status in UI
-    const isModeratorUser = computed(() => {
-      return isModerator.value;
-    });
-    
-    // --------------------------------------------------------------
-    // Helper Functions
-    // --------------------------------------------------------------
-
-    // Get user initials for avatar
     const getInitials = (name) => {
       if (!name) return '?';
-      return name.split(' ')
-        .map(part => part.charAt(0).toUpperCase())
+      return name
+        .split(' ')
+        .map((part) => part.charAt(0).toUpperCase())
         .join('')
         .substring(0, 2);
     };
-    
-    // --------------------------------------------------------------
-    // User Interactions
-    // --------------------------------------------------------------
 
-    // Start edit process
     const editDiscussion = async () => {
       // If moderator is editing someone else's discussion, we need to handle it differently
       if (canModerate.value && !isAuthor.value) {
@@ -210,12 +126,10 @@ export default {
       router.push(`/edit-discussion/${props.discussion.id}`);
     };
 
-    // Show delete confirmation modal
     const confirmDelete = () => {
       showDeleteModal.value = true;
     };
 
-    // Delete the discussion
     const deleteDiscussion = async () => {
       if (!canDelete.value) return;
       
@@ -241,10 +155,7 @@ export default {
       // Navigate back to home page
       router.push('/');
     };
-    
-    // --------------------------------------------------------------
-    // Expose component API
-    // --------------------------------------------------------------
+
     return {
       discussionDate,
       isAuthor,
@@ -256,7 +167,6 @@ export default {
       editDiscussion,
       confirmDelete,
       deleteDiscussion,
-      currentUser,
       getInitials
     };
   }
@@ -264,35 +174,147 @@ export default {
 </script>
 
 <style scoped>
-.discussion-detail-card {
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.discussion-detail {
+  max-width: 800px;
+  margin: 2rem auto;
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 24px #a8daf955;
+  padding: 2rem;
+  color: #23405a;
+  border: 1.5px solid #bbdcf0;
+}
+
+.discussion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.discussion-badges .badge {
+  background: #e4edf2;
+  color: #23405a;
+  border-radius: 1rem;
+  padding: 0.3rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.moderator-badge {
+  background: #92d2f9;
+  color: #fff;
+  border-radius: 1rem;
+  padding: 0.3rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.discussion-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #92d2f9;
+  margin-bottom: 1rem;
+}
+
+.author-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.author-avatar {
+  background: #92d2f9;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.2rem;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.author-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.author-name {
+  font-weight: 600;
+  color: #23405a;
+}
+
+.discussion-date {
+  font-size: 0.9rem;
+  color: #92d2f9;
 }
 
 .discussion-content {
   font-size: 1.1rem;
   line-height: 1.6;
-  white-space: pre-line;
-}
-
-.author-info {
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #eee;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-.ml-auto {
-  margin-left: auto;
-}
-
-.mb-3 {
-  margin-bottom: 1rem;
-}
-
-.mb-4 {
   margin-bottom: 1.5rem;
+}
+
+.discussion-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.action-btn {
+  background: linear-gradient(90deg, #a8daf9 0%, #92d2f9 100%);
+  color: #23405a;
+  border: none;
+  border-radius: 1.2rem;
+  padding: 0.6rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.action-btn:hover {
+  background: linear-gradient(90deg, #92d2f9 0%, #a8daf9 100%);
+  transform: translateY(-2px);
+}
+
+.delete-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.2);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.cancel-btn {
+  background: #e4edf2;
+  color: #23405a;
+}
+
+.danger-btn {
+  background: #ffb3b3;
+  color: #a94442;
 }
 </style>

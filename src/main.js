@@ -8,7 +8,8 @@ import 'bootstrap-vue-3/dist/bootstrap-vue-3.css';
 import BootstrapVue3 from 'bootstrap-vue-3';
 
 // Import global de styles
-//import '@/assets/main.css';
+import './assets/custom.scss';
+import './assets/main.css';
 
 const app = createApp(App);
 
