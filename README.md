@@ -1,5 +1,10 @@
 # blogsite
-
+### Project COllaborators
+```
+Abderrahim Oussayh
+Oussama Ghiati
+Badr Abaouz
+```
 ## Project setup
 ```
 npm install
