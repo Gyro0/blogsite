@@ -3,7 +3,6 @@
 ```
 Abderrahim Oussayh
 Oussama Ghiati
-Badr Abaouz
 ```
 ## Project setup
 ```
