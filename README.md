@@ -1,8 +1,14 @@
 # blogsite
-
+### Project Collaborators
+```
+Abderrahim Oussayh
+Oussama Ghiati
+```
 ## Project setup
 ```
 npm install
+npm install firebase@8.0.0
+npm install bootstrap bootstrap-vue-3
 ```
 
 ### Compiles and hot-reloads for development
